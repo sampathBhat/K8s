@@ -1,0 +1,109 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: my-jobmanager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: my-flink
+        component: jobmanager
+    spec:
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000        
+      containers:
+      - name: jobmanager
+        image: docker-repo/flink:tag
+        imagePullPolicy: Always
+        args:
+        - jobmanager
+        livenessProbe:
+          httpGet:
+            scheme: HTTPS
+            path: /
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 1
+          timeoutSeconds: 5
+        ports:
+        - containerPort: 4123
+          name: rpc
+        - containerPort: 4124
+          name: blob
+        
+        - containerPort: 4129
+          name: ha
+        
+        - containerPort: 8081
+          name: ui
+        env:
+        - name: FLINK_KUBE_CONFIGMAP_PATH
+          value: /opt/flink/configtmp
+
+        - name: JVM_ARGS
+          value: "-Djava.security.krb5.conf=/opt/kerberos/conf/krb5.conf"
+
+        - name: TRUSTSTORE_PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: secret-name
+              key: secret-key
+        - name: KEYSTORE_PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: secret-name
+              key: secret-key
+        - name: KEY_PASSWD
+          valueFrom:
+            secretKeyRef:
+              name: secret-name
+              key: secret-key
+        - name: SSL_KEYSTORE_PATH
+          value: /opt/ssl/keystore-path
+        - name: SSL_TRUSTSTORE_PATH
+          value: /opt/ssl/truststore-path
+        resources:
+          limits:
+            cpu: 1
+            memory: 2Gi
+          requests:
+            cpu: 1
+            memory: 2Gi
+        volumeMounts:
+        - name: test-flink-config
+          mountPath: /opt/flink/configtmp       
+        - mountPath: /home/share/
+          name: shared-pvc
+        - name: ssl
+          mountPath: /opt/ssl
+        - name: kerberos-config
+          mountPath: /opt/kerberos/conf
+        - name: kerberos-keytab
+          mountPath: /opt/kerberos/keytab
+      volumes:
+        - name: test-flink-config
+          configMap:
+            name: test-flink-config
+        - name: ssl
+          secret:
+            secretName: secret-name
+            items:
+            - key: keystore_key
+              path: keystore_path
+            - key: truststore_key
+              path: truststore_key
+        - name: shared-pvc
+          persistentVolumeClaim:
+            claimName: test-shared-pv-claim
+        - name: kerberos-config
+          configMap:
+            name: krb5ConfigmapName
+        - name: kerberos-keytab
+          secret:
+            secretName: kerberos_secret_name
+            items:
+            - key: kerberos_secret_key
+              path: kerberos_secret_key

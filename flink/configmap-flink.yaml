@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-flink-config
+  labels:
+    app: test-flink
+data:
+  flink-conf.yaml: |
+    blob.server.port: 4124
+    jobmanager.web.port: 8081
+    jobmanager.rpc.address: my-jobmanager
+    jobmanager.rpc.port: 4123
+    jobmanager.heap.mb: 1024
+    taskmanager.heap.mb: 1024
+    taskmanager.rpc.port: 4122
+    taskmanager.data.port: 4121
+    taskmanager.query.port: 4125
+    
+    
+    state.backend: rocksdb
+    state.checkpoints.dir: file:///home/share/checkpoints/ext_checkpoints
+    state.savepoints.dir: file:///home/share/checkpoints/savepoints
+    state.backend.fs.checkpointdir: file:///home/share/checkpoints//fs_state
+    state.backend.rocksdb.checkpointdir: file:///home/share/checkpoints/rocksdb_state
+    
+
+    
+    security.ssl.enabled: true
+    security.ssl.verify-hostname: false
+    jobmanager.web.ssl.enabled: true
+    taskmanager.data.ssl.enabled: true
+    blob.service.ssl.enabled: true
+    akka.ssl.enabled: true
+    
+
+    
+    high-availability: zookeeper
+    high-availability.cluster-id: my-cluster
+    high-availability.jobmanager.port: 4129
+    high-availability.zookeeper.path.root: my_flink
+    high-availability.storageDir: file:///home/share/HA
+    high-availability.zookeeper.quorum: ip:2181
+    # If Kerberos authentication failed Flink still connects to Zookeeper without authentication. Below configuration needed to override this scenario.
+    high-availability.zookeeper.client.acl: creator
+
+
+    security.kerberos.login.use-ticket-cache: true
+    security.kerberos.login.keytab: /opt/kerberos/keytab/keytab
+    security.kerberos.login.principal: principal
+    security.kerberos.login.contexts: Client
+    
+    taskmanager.numberOfTaskSlots: 4
+    restart-strategy: fixed-delay
+    restart-strategy.fixed-delay.attempts: 100
+    restart-strategy.fixed-delay.delay: 1 s
+
+
+    
+  log4j.properties: |
+    log4j.rootLogger={{ .Values.flink.logging.level }}, console, file
+
+    # Uncomment this if you want to _only_ change Flink's logging
+    log4j.logger.org.apache.flink=INFO
+
+    # The following lines keep the log level of common libraries/connectors on
+    # log level INFO. The root logger does not override this. You have to manually
+    # change the log levels here.
+    log4j.logger.akka=ERROR
+    log4j.logger.org.apache.kafka=INFO
+    log4j.logger.org.apache.hadoop=INFO
+    log4j.logger.org.apache.zookeeper=INFO
+
+    # Log all infos to the console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+
+    # Suppress the irrelevant (wrong) warnings from the Netty channel handler
+    log4j.logger.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, console
+
+    log4j.appender.file=org.apache.log4j.RollingFileAppender
+    log4j.appender.file.file=${log.file}
+    log4j.appender.file.MaxFileSize= 5MB
+    log4j.appender.file.MaxBackupIndex=3
+    log4j.appender.file.append=false
+    log4j.appender.file.layout=org.apache.log4j.PatternLayout
+    log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+
+    # Suppress the irrelevant (wrong) warnings from the Netty channel handler
+    log4j.logger.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file
+
+  log4j-cli.properties: |
+    log4j.rootLogger=INFO, console, file
+    log4j.logger.org.apache.hadoop=INFO, console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # suppress the warning that hadoop native libraries are not loaded (irrelevant for the client)
+    log4j.logger.org.apache.hadoop.util.NativeCodeLoader=OFF
+    
+    log4j.appender.file=org.apache.log4j.RollingFileAppender
+    log4j.appender.file.file=${log.file}
+    log4j.appender.file.MaxFileSize=5MB
+    log4j.appender.file.MaxBackupIndex=3
+    log4j.appender.file.append=false
+    log4j.appender.file.layout=org.apache.log4j.PatternLayout
+    log4j.appender.file.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    
+    # suppress the irrelevant (wrong) warnings from the netty channel handler
+    log4j.logger.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file
