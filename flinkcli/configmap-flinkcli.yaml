@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: test-flinkcli-config
+  labels:
+    app: test
+data:
+  flink-conf.yaml: |
+# The jobmanager address to which flink cli should connect  
+    jobmanager.rpc.address: jobmanager-address
+    jobmanager.rpc.port: 4123
+    security.ssl.enabled: true
+    security.ssl.verify-hostname: false
+    jobmanager.web.ssl.enabled: true
+    taskmanager.data.ssl.enabled: true
+    blob.service.ssl.enabled: true
+    akka.ssl.enabled: true
+    security.ssl.keystore: /opt/ssl/keystore_key
+    security.ssl.truststore: /opt/ssl/truststore_key
+    security.ssl.truststore-password: truststore_passwd_key
+    security.ssl.keystore-password: keystore_passwd_key
+    security.ssl.key-password: keystore_key_passwd_key
+    high-availability: zookeeper
+    high-availability.cluster-id: test-flink
+    high-availability.jobmanager.port: 4129
+    high-availability.zookeeper.path.root: test-flink_flink
+    high-availability.storageDir:  file:///home/share/HA
+    high-availability.zookeeper.quorum: ip:2181
+-
+
+  log4j-cli.properties: |
+    log4j.rootLogger=INFO, console
+    log4j.logger.org.apache.hadoop=INFO, console
+    log4j.appender.console=org.apache.log4j.ConsoleAppender
+    log4j.appender.console.layout=org.apache.log4j.PatternLayout
+    log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+    # suppress the warning that hadoop native libraries are not loaded (irrelevant for the client)
+    log4j.logger.org.apache.hadoop.util.NativeCodeLoader=OFF
+    # suppress the irrelevant (wrong) warnings from the netty channel handler
+    log4j.logger.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, file

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-jobsubmission
+  labels:
+    app: test-job
+spec:
+  securityContext:
+
+    fsGroup: 1000
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+  - name: jobsubmission
+    image: docker_repo/flink:tag
+    imagePullPolicy: Always
+    args: ["job_submission"]
+    env:
+    - name: FLINK_KUBE_CONFIGMAP_PATH
+      value: /opt/flink/configtmp
+    - name: APPLICATION_JAR_PATH
+      value: "/opt/flink_jar/flinkApp.jar_name"
+#The Flink Client arguments such as (run|savepoint|cancel)
+#Ref: https://ci.apache.org/projects/flink/flink-docs-release-1.5/ops/cli.html
+#Example: To run - "run -d"
+#Example: To savepoint - "savepoint <jobId> [savepointDirectory]"
+      - name: FLINK_CLI_ARGS
+      value: "flink_cli_args"
+    - name: FLINK_APP_ARGS
+      value: " flinkApp.jar_args "
+    volumeMounts:
+    - name: test-job-pv-storage
+      mountPath: /opt/flink_jar
+    - name: test-flinkcli-config
+      mountPath: /opt/flink/configtmp
+    - name: ssl
+      mountPath: /opt/ssl
+  restartPolicy: Never
+  volumes:
+  - name: test-flinkcli-config
+    configMap:
+      name: test-flinkcli-config
+  - name: test-job-pv-storage
+    hostPath:
+      path: /home/flink/Application/jar-path
+  - name: ssl
+    secret:
+      secretName: secret_name
+      items:
+      - key: keystore_key
+        path: keystore_key
+      - key: truststore_key
+        path: truststore_key
