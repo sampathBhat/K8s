@@ -75,8 +75,8 @@ def get(pod_name, namespace='default'):
 	response = api.read_namespaced_pod(pod_name,namespace)
 	return response
 
+# command is optional .If command is not specified then 'hostname' command will be executed
 def execute(pod_name, namespace='default', command='hostname', stdout=True, stdin=False, stderr =True, tty = False):
-	# command is optional .If command is not specified then 'hostname' command will be executed
         api= api_manager.get_core_v1_api()	
 	response = stream(api.connect_get_namespaced_pod_exec, pod_name, namespace, command=command, stderr=stderr, stdin=stdin, stdout=stdout, tty=tty)
 	return response
